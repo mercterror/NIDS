@@ -1,0 +1,216 @@
+mini/
+├── backend/
+│
+│   ├── alerts/
+│   │   ├── telegram_alert.py
+│   │   └── email_alert.py
+│
+│   ├── database/
+│   │   └── database.py
+│
+│   ├── discovery/
+│   │   └── device_scanner.py
+│
+│   ├── firewall/
+│   │   └── firewall.py
+│
+│   ├── ml/
+│   │   ├── train_model.py
+│   │   ├── realtime_detector.py
+│   │   ├── feature_extractor.py
+│   │   └── explainable_ai.py
+│
+│   ├── rules/
+│   │   └── rule_engine.py
+│
+│   ├── server/
+│   │   └── app.py
+│
+│   ├── sniffer/
+│   │   ├── sniffer.py
+│   │   └── flow_analyzer.py
+│
+│   ├── utils/
+│   │   ├── config.py
+│   │   ├── helpers.py
+│   │   └── logger.py
+│
+├── frontend/
+│   ├── public/
+│   └── src/
+│       ├── components/
+│       ├── pages/
+│       ├── services/
+│       └── charts/
+│
+├── models/
+│
+├── dataset/
+│
+├── logs/
+│
+├── requirements.txt
+└── README.md
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+WHAT EACH DIRECTORY DOES
+backend/sniffer
+
+Responsible for:
+
+Live packet sniffing
+Packet parsing
+Protocol analysis
+Metadata extraction
+
+Main tools:
+
+Scapy
+Raw sockets
+
+Files:
+
+File	Purpose
+sniffer.py	Captures packets
+flow_analyzer.py	Tracks network flows
+
+backend/ml
+
+Responsible for:
+
+Machine learning
+Feature engineering
+AI detection
+Threat scoring
+Explainable AI
+
+Files:
+
+File	Purpose
+train_model.py	ML training pipeline
+realtime_detector.py	Live AI detection
+feature_extractor.py	Feature generation
+explainable_ai.py	AI reasoning
+
+backend/rules
+
+Fast signature/rule-based detection engine.
+
+Detects:
+
+SYN flood
+ICMP flood
+Port scans
+
+Brute force
+DNS abuse
+
+backend/database
+
+Stores:
+
+Traffic logs
+Attack history
+Device inventory
+Dashboard statistics
+
+Supports:
+
+SQLite
+PostgreSQL
+
+backend/firewall
+
+Acts as IPS layer.
+
+Handles:
+
+Auto blocking
+iptables rules
+nftables rules
+Temporary bans
+
+backend/alerts
+
+Notification system.
+
+Supports:
+
+Telegram alerts
+Email alerts
+Severity alerts
+
+backend/discovery
+
+Network discovery engine.
+
+Detects:
+
+Devices
+MAC addresses
+Vendors
+Hostnames
+Operating systems
+
+backend/server
+
+Flask backend API.
+
+Provides:
+
+REST APIs
+WebSocket APIs
+Dashboard data
+Live attack streaming
+
+frontend
+
+Professional ReactJS dashboard.
+
+Pages:
+
+Live Traffic
+Intrusion Alerts
+Statistics
+Device Monitor
+Attack Timeline
+Threat Heatmap
+
+models
+
+Stores trained ML models.
+
+Examples:
+
+nids_model.pkl
+label_encoder.pkl
+scaler.pkl
+
+dataset
+
+Stores training datasets.
+
+Example:
+
+traffic_dataset.csv
+
+logs
+
+Stores:
+
+Traffic logs
+Attack logs
+System logs
