@@ -1,5 +1,5 @@
 from dataclasses import dataclass,field 
-from datatime import datetime
+from datetime import datetime
 from typing import Dict, Optional
 
 #Creating firstc class Packet with all the data members and their types
@@ -36,3 +36,6 @@ class Simulation:
     flow: Flow
     created_at: datetime = field(default_factory=datetime.now)
 
+
+#if __name__ == "__main__":
+    #print("Traffic Simulator Models Loaded Successfully!")
