@@ -206,5 +206,5 @@ class PacketSniffer:
 
 
 if __name__ == "__main__":
-    sniffer = PacketSniffer(interface=None)
+    sniffer = PacketSniffer(interface=None)  # Replace with your network interface
     sniffer.start()

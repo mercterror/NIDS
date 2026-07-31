@@ -214,3 +214,18 @@ Stores:
 Traffic logs
 Attack logs
 System logs
+
+
+
+sniffer
+-------
+sudo /home/mercterror/ak/venv/bin/python -m backend.sniffer.sniffer
+
+API
+----
+
+ python -m backend.api.app
+
+ frontend
+---------
+ npm start
