@@ -1,5 +1,5 @@
-from threat_rules import check_rules
-from scorer import calculate_score
+from detection_engine.threat_rules import check_rules
+from detection_engine.scorer import calculate_score
 
 
 def analyze_packet(packet):

@@ -1,5 +1,4 @@
-from flow_generator import generate_flow
-
+from traffic_simulator.flow_generator import generate_flow
 
 def run_simulator(number_of_flows=10):
     """Generate multiple network flows."""

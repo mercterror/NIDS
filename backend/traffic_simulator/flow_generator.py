@@ -2,7 +2,7 @@ import random
 
 from datetime import datetime, timedelta
 
-from packet_generator import (
+from traffic_simulator.packet_generator import (
     generate_packet,
     generate_ip,
     generate_mac,
