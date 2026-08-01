@@ -5,13 +5,18 @@ from scorer import calculate_score
 def analyze_packet(packet):
     """Analyze a packet and determine whether it is suspicious."""
 
+    # Check the packet against all IDS rules
     reasons = check_rules(packet)
 
+    # Calculate the overall threat score
     score = calculate_score(reasons)
 
-    return {
+    # Store the analysis result
+    result = {
         "packet": packet,
         "score": score,
         "is_suspicious": score >= 50,
         "reasons": reasons
     }
+
+    return result
