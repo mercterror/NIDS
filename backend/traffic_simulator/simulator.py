@@ -6,16 +6,20 @@ def run_simulator(number_of_flows=10):
 
     all_flows = []
 
-    for _ in range(number_of_flows):
-        flow = generate_flow()
+    for flow_number in range(1, number_of_flows + 1):
+        flow = generate_flow(flow_number)
         all_flows.append(flow)
 
     return all_flows
 
-simulation = run_simulator(2)
 
-for flow_number, flow in enumerate(simulation, start=1):
-    print(f"\nFlow {flow_number}")
+# if __name__ == "__main__":
 
-    for packet in flow:
-        print(packet)
+#     simulation = run_simulator(2)
+
+#     for flow in simulation:
+#         print(f"\n{flow[0]['flow_id']}")
+#         print("-" * 60)
+
+#         for packet in flow:
+#             print(packet)

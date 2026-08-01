@@ -10,6 +10,9 @@ from packet_generator import (
     generate_protocol,
 )
 
+MIN_PACKETS_PER_FLOW = 5
+MAX_PACKETS_PER_FLOW = 20
+
 def generate_flow(flow_number):
     """Generate one realistic network flow."""
     flow_context = {
@@ -31,28 +34,32 @@ def generate_flow(flow_number):
     }
     packets = []
 
-    packet_count = random.randint(5, 20)
-
+    packet_count = random.randint(
+        MIN_PACKETS_PER_FLOW,
+        MAX_PACKETS_PER_FLOW
+    )
     current_time = flow_context["start_time"]
 
     for packet_number in range(1, packet_count + 1):
-            if packet_number % 2 == 1:
-                direction = "Client → Server"
-            else:
-                direction = "Server → Client"
-            current_time += timedelta(milliseconds=random.randint(5, 20))
+        if packet_number % 2 == 1:
+             direction = "client_to_server"
+        else:
+           direction = "server_to_client"
+        current_time += timedelta(milliseconds=random.randint(5, 20))
 
-            packet = generate_packet(
-                flow_context=flow_context,
-                packet_number=packet_number,
-                direction=direction,
-                timestamp=current_time
-            )
-
-            packets.append(packet)
+        packet = generate_packet(
+            flow_context=flow_context,
+            packet_number=packet_number,
+            direction=direction,
+            timestamp=current_time
+        )
+        packets.append(packet)
 
     return packets
-flow = generate_flow(1)
 
-for packet in flow:
-    print(packet)
+# if __name__ == "__main__":
+
+#     flow = generate_flow(1)
+
+#     for packet in flow:
+#         print(packet)
