@@ -66,19 +66,53 @@ def generate_protocol():
 # print(generate_protocol())
 # print(generate_protocol())
 
-def generate_packet():
-    """Generate a simulated network packet."""
+def generate_packet(
+    flow_context,
+    packet_number,
+    direction,
+    timestamp
+):
+    """Generate a packet belonging to an existing network flow."""
 
-    packet = {
-        "source_ip": generate_ip(),
-        "destination_ip": generate_ip(),
-        "source_mac": generate_mac(),
-        "destination_mac": generate_mac(),
-        "source_port": generate_port(),
-        "destination_port": generate_port(),
-        "protocol": generate_protocol(),
+    if direction == "client_to_server":
+        source_ip = flow_context["source_ip"]
+        destination_ip = flow_context["destination_ip"]
+
+        source_mac = flow_context["source_mac"]
+        destination_mac = flow_context["destination_mac"]
+
+        source_port = flow_context["source_port"]
+        destination_port = flow_context["destination_port"]
+
+    else:
+        source_ip = flow_context["destination_ip"]
+        destination_ip = flow_context["source_ip"]
+
+        source_mac = flow_context["destination_mac"]
+        destination_mac = flow_context["source_mac"]
+
+        source_port = flow_context["destination_port"]
+        destination_port = flow_context["source_port"]
+
+    return {
+        "flow_id": flow_context["flow_id"],
+
+        "packet_number": packet_number,
+
+        "timestamp": timestamp,
+
+        "direction": direction,
+
+        "source_ip": source_ip,
+        "destination_ip": destination_ip,
+
+        "source_mac": source_mac,
+        "destination_mac": destination_mac,
+
+        "source_port": source_port,
+        "destination_port": destination_port,
+
+        "protocol": flow_context["protocol"],
+
         "packet_size": random.randint(64, 1500)
     }
-
-    return packet
-
