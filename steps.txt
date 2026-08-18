@@ -229,3 +229,6 @@ API
  frontend
 ---------
  npm start
+
+
+ Hotspot → Packet Capture → Feature Extraction → Rule Engine + AI Detection → Database → Dashboard → Telegram Alerts.

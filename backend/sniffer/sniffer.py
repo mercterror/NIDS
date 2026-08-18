@@ -141,6 +141,10 @@ class PacketSniffer:
 
                 self.db.insert_traffic_log(ml_features)
 
+                 # device count
+                print("[DEBUG] Updating device table...")
+                self.db.update_device(packet_data)
+
                 # =========================
                 # telegram alert
                 # =========================
