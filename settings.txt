@@ -1,0 +1,13 @@
+Username: admin
+Password: @aAXUL98856
+Device address: Dynamic (if the device has not obtained an address via DHCP, the address is 192.168.0.1)
+
+LAN: 
+Dynamic IPv4: Yes
+Hostname: dlinkap4768.local
+
+Wi-Fi 2.4 GHz: 
+Network name: DIR-615-5056
+Password: aAXUL98856
+
+Mode: Access point
