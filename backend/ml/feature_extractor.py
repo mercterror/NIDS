@@ -21,11 +21,11 @@ class FeatureExtractor:
         # BASIC FEATURES
         # =====================================================
 
-        features["src_ip"] = packet_data.get("src_ip")
-        features["dst_ip"] = packet_data.get("dst_ip")
+        features["src_ip"] = packet_data.get("source_ip")
+        features["dst_ip"] = packet_data.get("destination_ip")
 
-        features["src_port"] = packet_data.get("src_port") or 0
-        features["dst_port"] = packet_data.get("dst_port") or 0
+        features["src_port"] = packet_data.get("source_port") or 0
+        features["dst_port"] = packet_data.get("destination_port") or 0
 
         features["protocol"] = packet_data.get("protocol")
         features["packet_size"] = packet_data.get("packet_size", 0)
@@ -41,9 +41,9 @@ class FeatureExtractor:
 
         features["byte_count"] = flow_features["byte_count"]
 
-        features["packet_rate"] = flow_features["packets_per_sec"]
+        features["packet_rate"] = flow_features["packet_rate"]
 
-        features["byte_rate"] = flow_features["bytes_per_sec"]
+        features["byte_rate"] = flow_features["byte_rate"]
 
         features["average_packet_size"] = flow_features["average_packet_size"]
 
@@ -61,14 +61,16 @@ class FeatureExtractor:
         # TCP FLAGS
         # =====================================================
 
-        tcp = flow_features["tcp_flags"]
+       # =====================================================
+       # TCP FLAGS
+       # =====================================================
 
-        syn = tcp.get("S", 0)
-        ack = tcp.get("A", 0)
-        fin = tcp.get("F", 0)
-        rst = tcp.get("R", 0)
-        psh = tcp.get("P", 0)
-        urg = tcp.get("U", 0)
+        syn = flow_features["syn_flag_count"]
+        ack = flow_features["ack_flag_count"]
+        fin = flow_features["fin_flag_count"]
+        rst = flow_features["rst_flag_count"]
+        psh = flow_features["psh_flag_count"]
+        urg = flow_features["urg_flag_count"]
 
         features["syn_flag_count"] = syn
         features["ack_flag_count"] = ack
@@ -82,8 +84,15 @@ class FeatureExtractor:
             1
         )
 
-        features["syn_ratio"] = round(syn / total_flags, 3)
-        features["ack_ratio"] = round(ack / total_flags, 3)
+        features["syn_ratio"] = round(
+            syn / total_flags,
+            3
+        )
+
+        features["ack_ratio"] = round(
+            ack / total_flags,
+            3
+        )
 
         # =====================================================
         # DNS FEATURES
