@@ -1,20 +1,8 @@
 import pandas as pd
-import numpy as np
-import joblib
 
-from sklearn.ensemble import (
-    RandomForestClassifier,
-    IsolationForest
-)
-
-from sklearn.model_selection import (
-    train_test_split
-)
-
-from sklearn.preprocessing import (
-    LabelEncoder
-)
-
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import (
     accuracy_score,
     classification_report,
@@ -22,290 +10,160 @@ from sklearn.metrics import (
 )
 
 
-class NIDSTrainer:
+# ============================================================
+# LOAD DATASET
+# ============================================================
 
-    def __init__(self):
+DATASET_PATH = "D:\\NIDS\\backend\\dataset\\traffic_dataset.csv"
 
-        self.dataset_path = (
-            "dataset/traffic_dataset.csv"
-        )
+df = pd.read_csv(DATASET_PATH)
 
-        self.model_path = (
-            "models/nids_model.pkl"
-        )
+print("\n" + "=" * 60)
+print("NIDS MACHINE LEARNING TRAINING")
+print("=" * 60)
 
-        self.encoder_path = (
-            "models/label_encoder.pkl"
-        )
+print(f"\nDataset shape: {df.shape}")
 
-    def load_dataset(self):
+print("\nLabel distribution:")
+print(df["label"].value_counts())
 
-        print("[+] Loading dataset...")
 
-        df = pd.read_csv(
-            self.dataset_path
-        )
+# ============================================================
+# SELECT FEATURES
+# ============================================================
 
-        print(
-            f"[+] Dataset loaded:"
-            f" {len(df)} rows"
-        )
+feature_columns = [
+    "src_port",
+    "dst_port",
+    "protocol",
+    "packet_size",
+    "ttl",
+    "flow_duration",
+    "packet_count",
+    "byte_count",
+    "packet_rate",
+    "byte_rate",
+    "unique_src_ports",
+    "unique_dst_ports",
+    "entropy_score",
+    "inter_arrival_time",
+    "syn_flag_count",
+    "ack_flag_count",
+    "fin_flag_count",
+    "rst_flag_count",
+    "psh_flag_count",
+    "urg_flag_count",
+    "dns_query_count",
+    "failed_connections",
+    "arp_requests"
+]
 
-        return df
+X = df[feature_columns].copy()
+y = df["label"]
 
-    def preprocess_data(self, df):
 
-        print("[+] Preprocessing dataset...")
+# ============================================================
+# ENCODE PROTOCOL
+# ============================================================
 
-        # Remove unnecessary columns
-        drop_columns = [
-            "timestamp",
-            "src_ip",
-            "dst_ip",
-            "protocol"
-        ]
+protocol_encoder = LabelEncoder()
 
-        df = df.drop(
-            columns=drop_columns,
-            errors="ignore"
-        )
+X["protocol"] = protocol_encoder.fit_transform(
+    X["protocol"]
+)
 
-        # Fill missing values
-        df = df.fillna(0)
+print("\nProtocol encoding:")
+for index, protocol in enumerate(protocol_encoder.classes_):
+    print(f"{protocol} -> {index}")
 
-        # Encode labels
-        label_encoder = LabelEncoder()
 
-        df["label"] = (
-            label_encoder.fit_transform(
-                df["label"]
-            )
-        )
+# ============================================================
+# ENCODE LABELS
+# ============================================================
 
-        # Save encoder
-        joblib.dump(
-            label_encoder,
-            self.encoder_path
-        )
+label_encoder = LabelEncoder()
 
-        print(
-            "[+] Label encoder saved"
-        )
+y_encoded = label_encoder.fit_transform(y)
 
-        X = df.drop(
-            columns=["label"]
-        )
+print("\nAttack label encoding:")
+for index, label in enumerate(label_encoder.classes_):
+    print(f"{label} -> {index}")
 
-        y = df["label"]
 
-        return X, y, label_encoder
+# ============================================================
+# TRAIN / TEST SPLIT
+# ============================================================
 
-    def train_random_forest(
-        self,
-        X_train,
-        y_train
-    ):
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y_encoded,
+    test_size=0.20,
+    random_state=42,
+    stratify=y_encoded
+)
 
-        print(
-            "[+] Training Random Forest..."
-        )
+print("\nTraining samples:", len(X_train))
+print("Testing samples:", len(X_test))
 
-        model = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=20,
-            random_state=42,
-            n_jobs=-1
-        )
 
-        model.fit(
-            X_train,
-            y_train
-        )
+# ============================================================
+# TRAIN MODEL
+# ============================================================
 
-        return model
+model = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42,
+    class_weight="balanced"
+)
 
-    def train_isolation_forest(
-        self,
-        X_train
-    ):
+print("\nTraining Random Forest...")
 
-        print(
-            "[+] Training Isolation Forest..."
-        )
+model.fit(
+    X_train,
+    y_train
+)
 
-        iso_model = IsolationForest(
-            contamination=0.05,
-            random_state=42
-        )
+print("[+] Model training completed.")
 
-        iso_model.fit(X_train)
 
-        return iso_model
+# ============================================================
+# PREDICTION
+# ============================================================
 
-    def evaluate_model(
-        self,
-        model,
-        X_test,
+y_pred = model.predict(X_test)
+
+
+# ============================================================
+# EVALUATION
+# ============================================================
+
+accuracy = accuracy_score(
+    y_test,
+    y_pred
+)
+
+print("\n" + "=" * 60)
+print("MODEL EVALUATION")
+print("=" * 60)
+
+print(f"\nAccuracy: {accuracy:.4f}")
+
+print("\nClassification Report:")
+
+print(
+    classification_report(
         y_test,
-        label_encoder
-    ):
+        y_pred,
+        target_names=label_encoder.classes_,
+        zero_division=0
+    )
+)
 
-        print(
-            "[+] Evaluating model..."
-        )
+print("\nConfusion Matrix:")
 
-        predictions = model.predict(
-            X_test
-        )
-
-        accuracy = accuracy_score(
-            y_test,
-            predictions
-        )
-
-        print(
-            f"\n[+] Accuracy: "
-            f"{accuracy * 100:.2f}%"
-        )
-
-        print("\nClassification Report:\n")
-
-        print(
-            classification_report(
-                y_test,
-                predictions
-            )
-        )
-
-        print("\nConfusion Matrix:\n")
-
-        print(
-            confusion_matrix(
-                y_test,
-                predictions
-            )
-        )
-
-        self.show_feature_importance(
-            model,
-            X_test.columns
-        )
-
-    def show_feature_importance(
-        self,
-        model,
-        feature_names
-    ):
-
-        print(
-            "\n[+] Feature Importance:\n"
-        )
-
-        importance = (
-            model.feature_importances_
-        )
-
-        features = sorted(
-            zip(feature_names, importance),
-            key=lambda x: x[1],
-            reverse=True
-        )
-
-        for feature, score in features:
-
-            print(
-                f"{feature:<25}"
-                f"{score:.4f}"
-            )
-
-    def save_model(self, model):
-
-        joblib.dump(
-            model,
-            self.model_path
-        )
-
-        print(
-            f"\n[+] Model saved:"
-            f" {self.model_path}"
-        )
-
-    def run(self):
-
-        # =========================
-        # LOAD DATASET
-        # =========================
-
-        df = self.load_dataset()
-
-        # =========================
-        # PREPROCESS
-        # =========================
-
-        X, y, label_encoder = (
-            self.preprocess_data(df)
-        )
-
-        # =========================
-        # TRAIN TEST SPLIT
-        # =========================
-
-        X_train, X_test, y_train, y_test = (
-            train_test_split(
-                X,
-                y,
-                test_size=0.2,
-                random_state=42
-            )
-        )
-
-        print(
-            f"[+] Training samples:"
-            f" {len(X_train)}"
-        )
-
-        print(
-            f"[+] Testing samples:"
-            f" {len(X_test)}"
-        )
-
-        # =========================
-        # RANDOM FOREST
-        # =========================
-
-        model = self.train_random_forest(
-            X_train,
-            y_train
-        )
-
-        # =========================
-        # ISOLATION FOREST
-        # =========================
-
-        self.train_isolation_forest(
-            X_train
-        )
-
-        # =========================
-        # EVALUATION
-        # =========================
-
-        self.evaluate_model(
-            model,
-            X_test,
-            y_test,
-            label_encoder
-        )
-
-        # =========================
-        # SAVE MODEL
-        # =========================
-
-        self.save_model(model)
-
-
-if __name__ == "__main__":
-
-    trainer = NIDSTrainer()
-
-    trainer.run()
+print(
+    confusion_matrix(
+        y_test,
+        y_pred
+    )
+)
