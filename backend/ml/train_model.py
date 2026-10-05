@@ -1,4 +1,6 @@
 import pandas as pd
+import os
+import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -124,6 +126,45 @@ model.fit(
 )
 
 print("[+] Model training completed.")
+
+# ============================================================
+# SAVE TRAINED MODEL
+# ============================================================
+
+MODEL_DIR = "models"
+
+os.makedirs(
+    MODEL_DIR,
+    exist_ok=True
+)
+
+joblib.dump(
+    model,
+    os.path.join(
+        MODEL_DIR,
+        "nids_random_forest.pkl"
+    )
+)
+
+joblib.dump(
+    protocol_encoder,
+    os.path.join(
+        MODEL_DIR,
+        "protocol_encoder.pkl"
+    )
+)
+
+joblib.dump(
+    label_encoder,
+    os.path.join(
+        MODEL_DIR,
+        "label_encoder.pkl"
+    )
+)
+
+print("[+] Random Forest model saved.")
+print("[+] Protocol encoder saved.")
+print("[+] Label encoder saved.")
 
 
 # ============================================================
