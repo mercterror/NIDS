@@ -65,8 +65,8 @@ def main():
 
     simulation = run_simulator(number_of_flows)
 
-    for flow in simulation:
-        for packet in flow:
+    for flow in simulation: 
+        for packet in flow["packets"]:
             result = analyze_packet(packet)
 
             # AI analysis
