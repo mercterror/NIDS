@@ -1,12 +1,22 @@
 from scapy.all import sniff, IP, TCP, UDP, ICMP, Ether
 from datetime import datetime
-from backend.sniffer.flow_analyzer import FlowAnalyzer
+from sniffer.flow_analyzer import FlowAnalyzer
+from detection_engine.detector import analyze_packet
+from integration.final_decision import make_final_decision
+
+from integration.traffic_adapter import TrafficAdapter
+from ml.feature_extractor import FeatureExtractor
+from ml.predictor import NIDSPredictor
 
 class PacketSniffer:
 
     def __init__(self, interface=None):
         self.interface = interface
         self.flow_analyzer = FlowAnalyzer()
+
+        self.adapter = TrafficAdapter()
+        self.feature_extractor = FeatureExtractor()
+        self.predictor = NIDSPredictor()
 
     def get_protocol_name(self, proto_number):
         protocols = {
@@ -80,10 +90,49 @@ class PacketSniffer:
             # --- Flow analysis engine calls (Cleaned spaces) ---
             flow_features = self.flow_analyzer.update_flow(packet_data)
             self.flow_analyzer.display_flow(flow_features)
+
+            adapted_packet = self.adapter.adapt_packet(packet_data)
+            adapted_flow = self.adapter.adapt_flow(flow_features)
+
+            features = self.feature_extractor.extract_features(
+                adapted_packet,
+                adapted_flow
+            )
+
+            self.feature_extractor.display_features(features)
+            ai_result = self.predictor.predict(features)
+            
+            print("\n" + "=" * 65)
+            print("AI DETECTION")
+            print("=" * 65)
+            print(f"Prediction : {ai_result['label']}")
+            print(f"Confidence : {ai_result['confidence']:.2f}")
+            print("=" * 65)
+
+            rule_result = analyze_packet(adapted_packet)
+
+            decision = make_final_decision(
+                rule_result,
+                ai_result
+            )
+
+            print("\n" + "=" * 65)
+            print("FINAL DETECTION")
+            print("=" * 65)
+
+            print(f"Rule Score : {rule_result['score']}")
+            print(f"Suspicious : {rule_result['is_suspicious']}")
+            print(f"Reasons    : {rule_result['reasons']}")
+            print(f"AI Result  : {ai_result['label']}")
+            print(f"Confidence: {ai_result['confidence']:.2f}")
+            print(f"Verdict    : {decision['final_verdict']}")
+            print(f"Action     : {decision['action']}")
+
+            print("=" * 65)
+
             self.flow_analyzer.expire_old_flows()
 
-            # CRITICAL FIX: Explicitly return nothing so Scapy doesn't auto-print the dict
-            return
+            return packet_data, flow_features
 
         except Exception as e:
             print(f"[ERROR] Packet parsing failed: {e}")

@@ -2,10 +2,10 @@ class TrafficAdapter:
 
     def adapt_packet(self, packet):
         return {
-            "source_ip": packet["source_ip"],
-            "destination_ip": packet["destination_ip"],
-            "source_port": packet["source_port"],
-            "destination_port": packet["destination_port"],
+            "source_ip": packet.get("source_ip", packet.get("src_ip")),
+            "destination_ip": packet.get("destination_ip", packet.get("dst_ip")),
+            "source_port": packet.get("source_port", packet.get("src_port")),
+            "destination_port": packet.get("destination_port", packet.get("dst_port")),
             "protocol": packet["protocol"],
             "packet_size": packet["packet_size"],
             "ttl": packet["ttl"],
