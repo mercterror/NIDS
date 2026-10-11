@@ -131,7 +131,12 @@ print("[+] Model training completed.")
 # SAVE TRAINED MODEL
 # ============================================================
 
-MODEL_DIR = "models"
+MODEL_DIR = os.path.join(
+    os.path.dirname(__file__),
+    "models"
+)
+
+
 
 os.makedirs(
     MODEL_DIR,

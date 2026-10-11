@@ -1,18 +1,25 @@
+from pyexpat import features
 import time
 
-import joblib
-import pandas as pd
+from ml.predictor import NIDSPredictor
 
-from backend.rules.rule_engine import RuleEngine
-from backend.alerts.telegram_alert import TelegramAlert
-from backend.database.database import IDSDatabase
-
+from rules.rule_engine import RuleEngine
+from alerts.telegram_alert import TelegramAlert
+from database.database import IDSDatabase
 
 class RealtimeDetector:
 
     def __init__(self):
-        self.model = None
-        self.label_encoder = None
+        # ==========================
+        # LOAD AI MODEL
+        # ==========================
+        try:
+            self.predictor = NIDSPredictor()
+            print("[+] AI Model Loaded")
+        except Exception as e:
+            self.predictor = None
+            print(f"[MODEL LOAD ERROR] {e}")
+            print("[!] Running in RULE-ONLY mode")
 
         # ==========================
         # LOAD AI MODEL
@@ -115,48 +122,21 @@ class RealtimeDetector:
     # AI DETECTION
     # ============================================================
     def ai_detection(self, features):
-        if self.model is None:
+        if self.predictor is None:
             return None
 
         try:
-            df = pd.DataFrame([features])
+            result = self.predictor.predict(features)
 
-            # Remove fields not used by ML model
-            drop_columns = ["timestamp", "src_ip", "dst_ip", "protocol"]
-
-            for col in drop_columns:
-                if col in df.columns:
-                    df.drop(columns=[col], inplace=True)
-
-            # Refinement 3: Fill missing feature values before prediction
-            df = df.fillna(0)
-
-
-            # Match exactly the columns used during training
-            if hasattr(self.model, "feature_names_in_"):
-                model_columns = list(self.model.feature_names_in_)
-
-            # Add missing columns
-            for column in model_columns:
-                if column not in df.columns:
-                    df[column] = 0
-
-            # Remove extra columns and reorder
-            df = df.reindex(columns=model_columns, fill_value=0)
-
-            prediction = self.model.predict(df)[0]
-
-            if hasattr(self.model, "predict_proba"):
-                probs = self.model.predict_proba(df)[0]
-                confidence = float(max(probs)) * 100
-            else:
-                confidence = 100.0
-
-            label = self.label_encoder.inverse_transform([prediction])[0]
+            if result is None:
+                return None
 
             return {
-                "prediction": label,
-                "confidence": round(confidence, 2)
+                "prediction": result["label"],
+                "confidence": round(
+                    result["confidence"] * 100,
+                    2
+                )
             }
 
         except Exception as e:

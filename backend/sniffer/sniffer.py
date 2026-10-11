@@ -1,4 +1,6 @@
-from scapy.all import sniff, IP, TCP, UDP, ICMP, Ether
+from scapy import packet
+import traceback
+from scapy.all import sniff, IP, IPv6, TCP, UDP, ICMP, Ether
 from datetime import datetime
 from sniffer.flow_analyzer import FlowAnalyzer
 from detection_engine.detector import analyze_packet
@@ -7,6 +9,7 @@ from integration.final_decision import make_final_decision
 from integration.traffic_adapter import TrafficAdapter
 from ml.feature_extractor import FeatureExtractor
 from ml.predictor import NIDSPredictor
+from response_engine.response_engine import ResponseEngine
 
 class PacketSniffer:
 
@@ -17,6 +20,8 @@ class PacketSniffer:
         self.adapter = TrafficAdapter()
         self.feature_extractor = FeatureExtractor()
         self.predictor = NIDSPredictor()
+
+        self.response_engine = ResponseEngine(dry_run=True)
 
     def get_protocol_name(self, proto_number):
         protocols = {
@@ -59,6 +64,13 @@ class PacketSniffer:
                 packet_data["dst_ip"] = ip_layer.dst
                 packet_data["ttl"] = ip_layer.ttl
                 packet_data["protocol"] = self.get_protocol_name(ip_layer.proto)
+
+            elif packet.haslayer(IPv6):
+                ipv6_layer = packet[IPv6]
+                packet_data["src_ip"] = ipv6_layer.src
+                packet_data["dst_ip"] = ipv6_layer.dst
+                packet_data["ttl"] = ipv6_layer.hlim
+                packet_data["protocol"] = self.get_protocol_name(ipv6_layer.nh)
 
             # =========================
             # TCP LAYER
@@ -116,6 +128,29 @@ class PacketSniffer:
                 ai_result
             )
 
+            
+            response_packet = {
+                "source_ip": packet_data["src_ip"],
+                "source_mac": packet_data["src_mac"]
+            }
+
+            response_result = self.response_engine.handle_decision(
+                decision,
+                response_packet
+            )
+
+            print("\n" + "=" * 65)
+            print("RESPONSE ENGINE")
+            print("=" * 65)
+            print(f"Action       : {response_result['action']}")
+            print(f"Status       : {response_result['status']}")
+
+            if "block_success" in response_result:
+                print(f"Block success: {response_result['block_success']}")
+
+            print("=" * 65)
+
+
             print("\n" + "=" * 65)
             print("FINAL DETECTION")
             print("=" * 65)
@@ -136,6 +171,7 @@ class PacketSniffer:
 
         except Exception as e:
             print(f"[ERROR] Packet parsing failed: {e}")
+            traceback.print_exc()
             return
 
     def display_packet(self, data):
@@ -162,11 +198,12 @@ class PacketSniffer:
 
         sniff(
             iface=self.interface,
-            filter="tcp or udp or icmp",
+           filter="tcp or udp or icmp",
             prn=self.parse_packet,
             store=False
         )
 
 if __name__ == "__main__":
-    sniffer = PacketSniffer(interface=None)
+    wifi_interface = r"\Device\NPF_{2C13D9CE-1493-44FD-B62F-4F8B4A637796}"
+    sniffer = PacketSniffer(interface=wifi_interface)
     sniffer.start()

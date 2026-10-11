@@ -16,7 +16,7 @@ def generate_flow(
     direction,
     context=None,
     source_port=None,
-    destination_port=None
+    destination_port=None,
 ):
     
     """Generate one realistic one-directional network flow."""
@@ -33,6 +33,17 @@ def generate_flow(
         flow_context = context.copy()
 
     flow_context["flow_id"] = f"FLOW-{flow_number:04d}"
+    
+    if "connection_outcome" not in flow_context:
+        if flow_context["protocol"] == "TCP":
+            flow_context["connection_outcome"] = random.choices(
+                ["successful", "failed"],
+                weights=[0.8, 0.2],
+                k=1
+            )[0]
+        else:
+            flow_context["connection_outcome"] = None
+
 
     flow_context["source_port"] = (
         source_port if source_port is not None
@@ -196,7 +207,7 @@ def generate_flow(
         "source_port": flow_context["source_port"],
         "destination_port": flow_context["destination_port"],
         "protocol": flow_context["protocol"],
-
+        "connection_outcome": flow_context.get("connection_outcome"),
         "direction": direction,
 
         "start_time": packets[0]["timestamp"],

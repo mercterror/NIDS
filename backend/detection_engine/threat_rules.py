@@ -30,16 +30,18 @@ def check_rules(packet):
         reasons.append("Large ICMP Packet")
 
     # Rule 6: Very high destination port
-    if destination_port > 60000:
+    if destination_port is not None and destination_port > 60000:
         reasons.append("High Destination Port")
 
-    # Rule 7: Very high source port
-    if source_port > 60000:
-        reasons.append("High Source Port")
-
+    
     # Rule 8: Same source and destination port
-    if source_port == destination_port:
+    if (
+        source_port is not None
+        and destination_port is not None
+        and source_port == destination_port
+    ):
         reasons.append("Same Source and Destination Port")
+
 
     # Rule 9: HTTP using UDP
     if destination_port == 80 and protocol == "UDP":
@@ -52,9 +54,5 @@ def check_rules(packet):
     # Rule 11: DNS using TCP
     if destination_port == 53 and protocol == "TCP":
         reasons.append("DNS over TCP")
-
-    # Rule 12: Extremely small packet
-    if packet_size < 80:
-        reasons.append("Very Small Packet")
-
+        
     return reasons

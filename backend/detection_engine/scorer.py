@@ -10,7 +10,6 @@ THREAT_SCORES = {
     "HTTP over UDP": 35,
     "HTTPS over UDP": 35,
     "DNS over TCP": 15,
-    "Very Small Packet": 10
 }
 
 def calculate_score(reasons):

@@ -87,61 +87,42 @@ class DatasetGenerator:
 
         return "normal"
 
-    def save_feature_row(self, features):
+   
+    def save_feature_row(self, features, label_override=None):
 
-        label = self.determine_label(features)
+        label = (
+            label_override
+            if label_override is not None
+            else self.determine_label(features)
+        )
 
         row = [
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-
             features["src_ip"],
             features["dst_ip"],
-
             features["src_port"],
             features["dst_port"],
-
             features["protocol"],
-
             features["packet_size"],
-
             features["ttl"],
-
             features["flow_duration"],
-
             features["packet_count"],
-
             features["byte_count"],
-
             features["packet_rate"],
-
             features["byte_rate"],
-
             features["unique_src_ports"],
-
             features["unique_dst_ports"],
-
             features["entropy_score"],
-
             features["inter_arrival_time"],
-
             features["syn_flag_count"],
-
             features["ack_flag_count"],
-
             features["fin_flag_count"],
-
             features["rst_flag_count"],
-
             features["psh_flag_count"],
-
             features["urg_flag_count"],
-
             features["dns_query_count"],
-
             features["failed_connections"],
-
             features["arp_requests"],
-
             label
         ]
 
@@ -152,7 +133,6 @@ class DatasetGenerator:
         ) as file:
 
             writer = csv.writer(file)
-
             writer.writerow(row)
 
         print(f"[+] Dataset Row Saved → Label: {label}")

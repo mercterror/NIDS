@@ -84,3 +84,31 @@ if __name__ == "__main__":
             f"{first_packet['source_port']} → "
             f"{first_packet['destination_port']}"
         )
+
+
+def generate_brute_force(flow_count, direction):
+    """Generate TCP flows representing failed connection attempts."""
+
+    flows = []
+
+    shared_context = {
+        "source_ip": generate_ip(),
+        "destination_ip": generate_ip(),
+        "source_mac": generate_mac(),
+        "destination_mac": generate_mac(),
+        "protocol": "TCP",
+        "connection_outcome": "failed"
+    }
+
+    for flow_number in range(1, flow_count + 1):
+        flow = generate_flow(
+            flow_number=flow_number,
+            direction=direction,
+            context=shared_context,
+            source_port=50000 + flow_number,
+            destination_port=22
+        )
+
+        flows.append(flow)
+
+    return flows

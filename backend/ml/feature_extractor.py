@@ -6,7 +6,6 @@ class FeatureExtractor:
 
     def __init__(self):
 
-        self.failed_connections = defaultdict(int)
         self.dns_query_counter = defaultdict(int)
         self.arp_request_counter = defaultdict(int)
 
@@ -113,27 +112,16 @@ class FeatureExtractor:
             ]
         )
 
-        # =====================================================
+                # =====================================================
         # FAILED CONNECTIONS
         # =====================================================
 
-        if syn > 0 and ack == 0:
+        # Do not infer failed connections from cumulative flow flags.
+        # This feature will remain zero until connection-attempt
+        # tracking is implemented consistently.
+        features["failed_connections"] = 0
 
-            self.failed_connections[
-                features["src_ip"]
-            ] += 1
 
-        elif ack > 0:
-
-            self.failed_connections[
-                features["src_ip"]
-            ] = 0
-
-        features["failed_connections"] = (
-            self.failed_connections[
-                features["src_ip"]
-            ]
-        )
 
         # =====================================================
         # ARP
