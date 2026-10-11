@@ -67,22 +67,36 @@ def generate_ttl(protocol):
     return random.choice(common_ttl_values)
 
 
-def generate_tcp_flags(protocol):
-    """Generate TCP flags for a simulated packet."""
+def generate_tcp_flags(protocol, packet_number, connection_outcome, direction):
+    """Generate TCP flags for a simulated one-directional flow."""
 
     if protocol != "TCP":
         return None
 
-    tcp_flag_combinations = [
-        "S",
-        "SA",
-        "A",
-        "PA",
-        "FA",
-        "R"
-    ]
+    if direction == "Client → Server":
 
-    return random.choice(tcp_flag_combinations)
+        if connection_outcome == "failed":
+            # Simulate repeated SYN attempts without a
+            # completed handshake being observed.
+            return "S"
+
+        if packet_number == 1:
+            return "S"
+
+        if packet_number == 2:
+            return "A"
+
+        return random.choice(["A", "PA"])
+
+    else:  # Server → Client
+
+        if connection_outcome == "failed":
+            return "R"
+
+        if packet_number == 1:
+            return "SA"
+
+        return random.choice(["A", "PA"])
 
 
 def generate_icmp_type(protocol):
@@ -155,7 +169,12 @@ def generate_packet(
 
         "ttl": generate_ttl(protocol),
 
-        "tcp_flags": generate_tcp_flags(protocol),
+        "tcp_flags": generate_tcp_flags(
+            protocol,
+            packet_number,
+            flow_context.get("connection_outcome", "successful"),
+            direction
+        ),
 
         "icmp_type": generate_icmp_type(protocol)
     }
