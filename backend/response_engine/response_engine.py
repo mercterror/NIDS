@@ -153,8 +153,8 @@ class ResponseEngine:
                 "source_ip": source_ip,
                 "source_mac": source_mac,
                 "ip_blocking": ip_result,
-                "block_success": block_success,
-                "status": status
+                "block_success": ip_result.get("success", False),
+                "status": ip_result.get("message", "Unknown blocking result")
             }
 
         except Exception as error:

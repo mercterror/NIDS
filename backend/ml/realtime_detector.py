@@ -10,7 +10,8 @@ from database.database import IDSDatabase
 class RealtimeDetector:
 
     def __init__(self):
-        # ==========================
+        
+       # ==========================
         # LOAD AI MODEL
         # ==========================
         try:
@@ -18,17 +19,6 @@ class RealtimeDetector:
             print("[+] AI Model Loaded")
         except Exception as e:
             self.predictor = None
-            print(f"[MODEL LOAD ERROR] {e}")
-            print("[!] Running in RULE-ONLY mode")
-
-        # ==========================
-        # LOAD AI MODEL
-        # ==========================
-        try:
-            self.model = joblib.load("models/nids_model.pkl")
-            self.label_encoder = joblib.load("models/label_encoder.pkl")
-            print("[+] AI Model Loaded")
-        except Exception as e:
             print(f"[MODEL LOAD ERROR] {e}")
             print("[!] Running in RULE-ONLY mode")
 
@@ -114,6 +104,7 @@ class RealtimeDetector:
         if attack_key in self.last_attack:
             if current_time - self.last_attack[attack_key] < 60:
                 return True
+            
 
         self.last_attack[attack_key] = current_time
         return False

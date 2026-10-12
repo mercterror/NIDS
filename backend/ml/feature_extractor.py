@@ -93,14 +93,14 @@ class FeatureExtractor:
             3
         )
 
+       
         # =====================================================
         # DNS FEATURES
         # =====================================================
 
         if (
-            features["src_port"] == 53
-            or
-            features["dst_port"] == 53
+            features["protocol"] == "UDP"
+            and features["dst_port"] == 53
         ):
             self.dns_query_counter[
                 features["src_ip"]
@@ -110,9 +110,15 @@ class FeatureExtractor:
             self.dns_query_counter[
                 features["src_ip"]
             ]
+            if (
+                features["protocol"] == "UDP"
+                and features["dst_port"] == 53
+            )
+            else 0
         )
 
-                # =====================================================
+
+        # =====================================================
         # FAILED CONNECTIONS
         # =====================================================
 

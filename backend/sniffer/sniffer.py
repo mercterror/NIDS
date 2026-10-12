@@ -101,6 +101,7 @@ class PacketSniffer:
             
             # --- Flow analysis engine calls (Cleaned spaces) ---
             flow_features = self.flow_analyzer.update_flow(packet_data)
+            
             self.flow_analyzer.display_flow(flow_features)
 
             adapted_packet = self.adapter.adapt_packet(packet_data)
