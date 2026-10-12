@@ -120,7 +120,7 @@ class TelegramAlert:
 
                 f"Threat Score: {threat_score}\n"
 
-                f"AI Confidence: {confidence}%\n\n"
+                f"AI Confidence: {confidence * 100:.1f}%\n\n"
 
                 f"Packet Rate: {packet_rate}\n"
 

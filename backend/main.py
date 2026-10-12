@@ -1,53 +1,21 @@
+
 from traffic_simulator.simulator import run_simulator
-from detection_engine.detector import analyze_packet
+from integration.simulator_adapter import simulator_packet_to_scapy
+from sniffer.sniffer import PacketSniffer
 
 MIN_FLOWS = 5
 MAX_FLOWS = 30
 
-def display_result(result):
-    """Display the packet analysis result."""
 
-    packet = result["packet"]
-
-    print("=" * 60)
-    print("Packet Analysis Result")
-    print("=" * 60)
-    print(f"Flow ID       : {packet['flow_id']}")
-    print(f"Packet Number : {packet['packet_number']}")
-    print(f"Direction     : {packet['direction']}")
-    print(f"Protocol      : {packet['protocol']}")
-    print(f"Threat Score  : {result['score']}")
-    print(f"Source IP     : {packet['source_ip']}")
-    print(f"Destination IP: {packet['destination_ip']}")
-    print(f"Source Port   : {packet['source_port']}")
-    print(f"Destination Port: {packet['destination_port']}")
-    print(f"Packet Size   : {packet['packet_size']} Bytes")
-
-    print("\nDetection Reasons:")
-
-    if result["reasons"]:
-        for reason in result["reasons"]:
-            print(f"  - {reason}")
-    else:
-        print("  None")
-        print()
-
-    if result["is_suspicious"]:
-        print("Status        : SUSPICIOUS")
-        print("=" * 60)
-        return True
-
-    print("Status        : NORMAL")
-    print("=" * 60)
-    return False
 def main():
-    """Run the complete IDS simulation."""
+    """Run simulated traffic through the existing NIDS pipeline."""
 
     while True:
         try:
             number_of_flows = int(
                 input(
-                    f"Enter the number of flows to simulate ({MIN_FLOWS}-{MAX_FLOWS}): "
+                    f"Enter the number of flows to simulate "
+                    f"({MIN_FLOWS}-{MAX_FLOWS}): "
                 )
             )
 
@@ -55,25 +23,24 @@ def main():
                 break
 
             print(
-                f"Please enter a whole number between {MIN_FLOWS} and {MAX_FLOWS}."
+                f"Please enter a whole number between "
+                f"{MIN_FLOWS} and {MAX_FLOWS}."
             )
 
         except ValueError:
-            print(
-                f"Invalid input. Please enter a whole number between {MIN_FLOWS} and {MAX_FLOWS}."
-            )
+            print("Invalid input. Please enter a whole number.")
 
     simulation = run_simulator(number_of_flows)
 
-    for flow in simulation: 
-        for packet in flow["packets"]:
-            result = analyze_packet(packet)
+    sniffer = PacketSniffer()
+    sniffer.alerts_enabled = False
+    sniffer.response_engine.dry_run = True
+    
+    for flow in simulation:
+        for packet_data in flow["packets"]:
+            scapy_packet = simulator_packet_to_scapy(packet_data)
+            sniffer.parse_packet(scapy_packet)
 
-            # AI analysis
-
-            # Telegram alert
-
-            display_result(result)
 
 if __name__ == "__main__":
     main()

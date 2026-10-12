@@ -1,6 +1,15 @@
 from scapy import packet
 import traceback
-from scapy.all import sniff, IP, IPv6, TCP, UDP, ICMP, Ether
+from scapy.all import (
+    sniff,
+    IP,
+    IPv6,
+    TCP,
+    UDP,
+    ICMP,
+    Ether,
+    Raw,
+)
 from datetime import datetime
 from sniffer.flow_analyzer import FlowAnalyzer
 from detection_engine.detector import analyze_packet
@@ -11,11 +20,19 @@ from ml.feature_extractor import FeatureExtractor
 from ml.predictor import NIDSPredictor
 from response_engine.response_engine import ResponseEngine
 
+from database.database import IDSDatabase
+from alerts.telegram_alert import TelegramAlert
+from alerts.email_alert import EmailAlert
+
 class PacketSniffer:
 
     def __init__(self, interface=None):
         self.interface = interface
         self.flow_analyzer = FlowAnalyzer()
+        self.database = IDSDatabase()
+        self.telegram_alert = TelegramAlert()
+        self.alerts_enabled = True
+        self.email_alert = EmailAlert()
 
         self.adapter = TrafficAdapter()
         self.feature_extractor = FeatureExtractor()
@@ -104,6 +121,28 @@ class PacketSniffer:
             
             self.flow_analyzer.display_flow(flow_features)
 
+            
+            # Save the current flow statistics to the database.
+            flow_key = flow_features["flow_key"]
+
+            traffic_log = {
+                "src_ip": flow_key[0],
+                "dst_ip": flow_key[1],
+                "src_port": flow_key[2],
+                "dst_port": flow_key[3],
+                "protocol": flow_key[4],
+                "packet_count": flow_features["packet_count"],
+                "byte_count": flow_features["byte_count"],
+                "packet_rate": flow_features["packet_rate"],
+                "byte_rate": flow_features["byte_rate"],
+                "flow_duration": flow_features["duration"],
+                "entropy_score": flow_features["entropy_score"],
+                "threat_score": 0
+            }
+
+            self.database.insert_traffic_log(traffic_log)
+
+
             adapted_packet = self.adapter.adapt_packet(packet_data)
             adapted_flow = self.adapter.adapt_flow(flow_features)
 
@@ -165,6 +204,45 @@ class PacketSniffer:
             print(f"Action     : {decision['action']}")
 
             print("=" * 65)
+
+            
+            
+            # Log malicious final decisions to the database.
+            if decision["final_verdict"] == "MALICIOUS":
+                threat_score = rule_result["score"]
+
+                attack_log = {
+                    "src_ip": packet_data["src_ip"],
+                    "timestamp": packet_data["timestamp"],
+                    "packet_rate": flow_features["packet_rate"],
+                    "byte_rate": flow_features["byte_rate"],
+                    "dst_ip": packet_data["dst_ip"],
+                    "attack_type": (
+                        ai_result["label"]
+                        if ai_result["label"].lower() != "normal"
+                        else (
+                            ", ".join(rule_result["reasons"])
+                            or "Rule-based detection"
+                        )
+                    ),
+                    "severity": (
+                        "HIGH" if threat_score >= 50 else "MEDIUM"
+                    ),
+                    "protocol": packet_data["protocol"],
+                    "threat_score": threat_score,
+                    "confidence": ai_result["confidence"],
+                    "status": response_result["status"],
+                    "rule_result": rule_result,
+                    "ai_result": ai_result,
+                    "final_decision": decision
+                }
+
+                self.database.insert_attack_log(attack_log)
+                if self.alerts_enabled:
+                    self.telegram_alert.send_attack_alert(attack_log)
+                    self.email_alert.send_attack_alert(attack_log)
+
+
 
             self.flow_analyzer.expire_old_flows()
 
