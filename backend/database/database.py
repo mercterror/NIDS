@@ -116,6 +116,57 @@ class IDSDatabase:
             last_seen TEXT
         )
         """)
+        # USERS TABLE
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'admin',
+            created_at TEXT NOT NULL
+        )
+        """)
+
+                # REVOKED JWT TOKENS TABLE
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS revoked_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            jti TEXT NOT NULL UNIQUE,
+            revoked_at TEXT NOT NULL
+        )
+        """)
+
+        # NOTIFICATION SETTINGS
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notification_settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            alert_email TEXT NOT NULL DEFAULT '',
+            telegram_chat_id TEXT,
+            updated_at TEXT
+        )
+        """)
+
+        # Migrate existing databases without losing saved Telegram settings.
+        columns = {
+            row[1]
+            for row in cursor.execute(
+                "PRAGMA table_info(notification_settings)"
+            ).fetchall()
+        }
+
+        if "alert_email" not in columns:
+            cursor.execute("""
+                ALTER TABLE notification_settings
+                ADD COLUMN alert_email TEXT NOT NULL DEFAULT ''
+            """)
+
+        cursor.execute("""
+        INSERT OR IGNORE INTO notification_settings (
+            id, alert_email, telegram_chat_id, updated_at
+        )
+        VALUES (1, '', '', ?)
+        """, (datetime.now().isoformat(),))
 
         conn.commit()
 
@@ -192,8 +243,9 @@ class IDSDatabase:
             ))
 
             conn.commit()
-
+            record_id = cursor.lastrowid
             conn.close()
+            return record_id
 
         except Exception as e:
 
@@ -543,10 +595,43 @@ class IDSDatabase:
 
         return rows
 
+    def get_blocked_ips(self):
+        conn = self.connect()
+        conn.row_factory = sqlite3.Row
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT *
+            FROM blocked_ips
+            ORDER BY id DESC
+        """)
+
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        return rows
+
 # =========================
 # TEST DATABASE
 # =========================
+    def update_traffic_threat_score(self, record_id, threat_score):
+        conn = self.connect()
 
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE traffic_logs
+                SET threat_score = ?
+                WHERE id = ?
+                """,
+                (threat_score, record_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 if __name__ == "__main__":
 
     db = IDSDatabase()

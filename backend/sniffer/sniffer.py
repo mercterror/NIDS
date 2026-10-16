@@ -19,6 +19,7 @@ from integration.traffic_adapter import TrafficAdapter
 from ml.feature_extractor import FeatureExtractor
 from ml.predictor import NIDSPredictor
 from response_engine.response_engine import ResponseEngine
+from rules.rule_engine import RuleEngine
 
 from database.database import IDSDatabase
 from alerts.telegram_alert import TelegramAlert
@@ -26,19 +27,24 @@ from alerts.email_alert import EmailAlert
 
 class PacketSniffer:
 
-    def __init__(self, interface=None):
+    def __init__(self, interface=None, dry_run=True):
         self.interface = interface
         self.flow_analyzer = FlowAnalyzer()
         self.database = IDSDatabase()
         self.telegram_alert = TelegramAlert()
         self.alerts_enabled = True
         self.email_alert = EmailAlert()
+        self.rule_engine = RuleEngine()
 
         self.adapter = TrafficAdapter()
         self.feature_extractor = FeatureExtractor()
         self.predictor = NIDSPredictor()
 
-        self.response_engine = ResponseEngine(dry_run=True)
+        self.response_engine = ResponseEngine(dry_run=dry_run)
+
+        mode = "DRY RUN" if dry_run else "REAL FIREWALL ACTIONS"
+        print(f"[+] Response mode: {mode}")
+
 
     def get_protocol_name(self, proto_number):
         protocols = {
@@ -140,7 +146,7 @@ class PacketSniffer:
                 "threat_score": 0
             }
 
-            self.database.insert_traffic_log(traffic_log)
+            traffic_record_id = self.database.insert_traffic_log(traffic_log)
 
 
             adapted_packet = self.adapter.adapt_packet(packet_data)
@@ -153,6 +159,13 @@ class PacketSniffer:
 
             self.feature_extractor.display_features(features)
             ai_result = self.predictor.predict(features)
+            flow_rule_result = self.rule_engine.detect(features)
+
+            if flow_rule_result["attack_detected"]:
+                print(
+                    f"[FLOW RULE] {flow_rule_result['attack_type']} | "
+                    f"Score: {flow_rule_result['threat_score']}"
+                )
             
             print("\n" + "=" * 65)
             print("AI DETECTION")
@@ -163,10 +176,29 @@ class PacketSniffer:
 
             rule_result = analyze_packet(adapted_packet)
 
+            if flow_rule_result["attack_detected"]:
+                rule_result = {
+                    **rule_result,
+                    "score": max(
+                        rule_result["score"],
+                        flow_rule_result["threat_score"]
+                    ),
+                    "is_suspicious": True,
+                    "reasons": [
+                        *rule_result["reasons"],
+                        flow_rule_result["attack_type"]
+                    ]
+                }
+
             decision = make_final_decision(
                 rule_result,
                 ai_result
             )
+
+            self.database.update_traffic_threat_score(
+            traffic_record_id,
+            rule_result["score"]
+)
 
             
             response_packet = {
@@ -282,7 +314,23 @@ class PacketSniffer:
             store=False
         )
 
+
 if __name__ == "__main__":
+    import os
+
     wifi_interface = r"\Device\NPF_{2C13D9CE-1493-44FD-B62F-4F8B4A637796}"
-    sniffer = PacketSniffer(interface=wifi_interface)
+
+    # Real firewall actions require explicit opt-in.
+    real_blocking = os.environ.get("NIDS_REAL_BLOCKING", "").strip().lower() == "true"
+
+    if real_blocking:
+        print("[!] REAL IP BLOCKING ENABLED.")
+        print("[!] Run only with administrator privileges and on a network you are authorized to monitor.")
+    else:
+        print("[+] Safe mode enabled. Firewall actions are simulated.")
+
+    sniffer = PacketSniffer(
+        interface=wifi_interface,
+        dry_run=not real_blocking
+    )
     sniffer.start()

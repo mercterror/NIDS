@@ -1,7 +1,9 @@
 from traffic_simulator.traffic_generator import (
     generate_traffic,
-    generate_port_scan
+    generate_port_scan,
 )
+
+import random
 
 from ml.feature_extractor import FeatureExtractor
 from ml.dataset_generator import DatasetGenerator
@@ -20,30 +22,30 @@ ATTACK_EXAMPLES = 100
 # HELPERS
 # ============================================================
 
+
+
 def save_features(
     feature_extractor,
     dataset_generator,
     packet,
     flow,
-    modifications=None
+    modifications=None,
+    label_override=None
 ):
-    """
-    Extract features from a flow and optionally modify
-    selected features before saving the dataset row.
-    """
+    features = feature_extractor.extract_features(packet, flow)
 
-    features = feature_extractor.extract_features(
-        packet,
-        flow
-    )
+    if features is None:
+        return
 
     if modifications:
         for key, value in modifications.items():
             features[key] = value
 
     dataset_generator.save_feature_row(
-        features
+        features,
+        label_override=label_override
     )
+
 
 
 # ============================================================
@@ -71,7 +73,8 @@ def generate_normal_traffic(
             feature_extractor,
             dataset_generator,
             packet,
-            flow
+            flow,
+            label_override="normal"
         )
 
     print(
@@ -108,7 +111,8 @@ def generate_port_scan_data(
             flow,
             {
                 "unique_dst_ports": 20
-            }
+            },
+            label_override="port_scan"
         )
 
     print(
@@ -146,7 +150,8 @@ def generate_syn_flood_data(
             {
                 "syn_flag_count": 150,
                 "ack_flag_count": 2
-            }
+            },
+            label_override="syn_flood"
         )
 
     print(
@@ -188,7 +193,8 @@ def generate_icmp_flood_data(
             flow,
             {
                 "packet_rate": 250
-            }
+            },
+            label_override="icmp_flood"
         )
 
     print(
@@ -225,7 +231,8 @@ def generate_dns_abuse_data(
             flow,
             {
                 "dns_query_count": 150
-            }
+            },
+            label_override="dns_abuse"
         )
 
     print(
@@ -264,7 +271,8 @@ def generate_arp_spoofing_data(
             flow,
             {
                 "arp_requests": 60
-            }
+            },
+            label_override="arp_spoofing"
         )
 
     print(
@@ -272,42 +280,6 @@ def generate_arp_spoofing_data(
         f"{len(flows)}"
     )
 
-
-# ============================================================
-# BRUTE FORCE
-# ============================================================
-
-def generate_brute_force_data(
-    feature_extractor,
-    dataset_generator
-):
-    print("\n" + "=" * 60)
-    print("GENERATING BRUTE FORCE DATA")
-    print("=" * 60)
-
-    flows = generate_traffic(
-        flow_count=ATTACK_EXAMPLES,
-        direction="Client → Server"
-    )
-
-    for flow in flows:
-
-        packet = flow["packets"][0]
-
-        save_features(
-            feature_extractor,
-            dataset_generator,
-            packet,
-            flow,
-            {
-                "failed_connections": 50
-            }
-        )
-
-    print(
-        f"[+] Brute force examples generated: "
-        f"{len(flows)}"
-    )
 
 
 # ============================================================
@@ -378,14 +350,7 @@ if __name__ == "__main__":
         dataset_generator
     )
 
-    # --------------------------------------------------------
-    # BRUTE FORCE
-    # --------------------------------------------------------
 
-    generate_brute_force_data(
-        feature_extractor,
-        dataset_generator
-    )
 
     print("\n" + "=" * 60)
     print("DATASET GENERATION COMPLETED")
