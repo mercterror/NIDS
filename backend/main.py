@@ -33,7 +33,7 @@ def main():
     simulation = run_simulator(number_of_flows)
 
     sniffer = PacketSniffer()
-    sniffer.alerts_enabled = False
+    sniffer.alerts_enabled = True
     sniffer.response_engine.dry_run = True
     
     for flow in simulation:
