@@ -3,6 +3,7 @@ from datetime import datetime
 import json
 
 
+
 class IDSDatabase:
 
     def __init__(self, db_path="ids_logs.db"):
@@ -96,11 +97,82 @@ class IDSDatabase:
         )
         """)
 
+        # DEVICES TABLE
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS devices (
+
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+            ip_address TEXT UNIQUE,
+
+            mac_address TEXT,
+
+            hostname TEXT,
+
+            vendor TEXT,
+
+            risk_level TEXT DEFAULT 'LOW',
+
+            last_seen TEXT
+        )
+        """)
+        # USERS TABLE
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'admin',
+            created_at TEXT NOT NULL
+        )
+        """)
+
+                # REVOKED JWT TOKENS TABLE
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS revoked_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            jti TEXT NOT NULL UNIQUE,
+            revoked_at TEXT NOT NULL
+        )
+        """)
+
+        # NOTIFICATION SETTINGS
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notification_settings (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            alert_email TEXT NOT NULL DEFAULT '',
+            telegram_chat_id TEXT,
+            updated_at TEXT
+        )
+        """)
+
+        # Migrate existing databases without losing saved Telegram settings.
+        columns = {
+            row[1]
+            for row in cursor.execute(
+                "PRAGMA table_info(notification_settings)"
+            ).fetchall()
+        }
+
+        if "alert_email" not in columns:
+            cursor.execute("""
+                ALTER TABLE notification_settings
+                ADD COLUMN alert_email TEXT NOT NULL DEFAULT ''
+            """)
+
+        cursor.execute("""
+        INSERT OR IGNORE INTO notification_settings (
+            id, alert_email, telegram_chat_id, updated_at
+        )
+        VALUES (1, '', '', ?)
+        """, (datetime.now().isoformat(),))
+
         conn.commit()
 
         conn.close()
 
-        print("[+] Database tables initialized")
+        #print("[+] Database tables initialized")
 
     # =========================
     # INSERT TRAFFIC LOG
@@ -171,8 +243,9 @@ class IDSDatabase:
             ))
 
             conn.commit()
-
+            record_id = cursor.lastrowid
             conn.close()
+            return record_id
 
         except Exception as e:
 
@@ -357,11 +430,208 @@ class IDSDatabase:
 
             print(f"[DATABASE ERROR] Blocked IP insert failed: {e}")
 
+    def insert_device(
+        self,
+        ip,
+        mac="",
+        hostname="Unknown",
+        vendor="Unknown",
+        risk="LOW"
+    ):
+
+        conn = self.connect()
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        INSERT OR REPLACE INTO devices(
+            ip_address,
+            mac_address,
+            hostname,
+            vendor,
+            risk_level,
+            last_seen
+        )
+        VALUES(?,?,?,?,?,?)
+        """, (
+
+            ip,
+            mac,
+            hostname,
+            vendor,
+            risk,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        ))
+
+        conn.commit()
+        conn.close()
+
+    def get_recent_attacks(self, limit=50):
+
+        conn = self.connect()
+
+        conn.row_factory = sqlite3.Row
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        SELECT *
+        FROM attack_logs
+        ORDER BY id DESC
+        LIMIT ?
+        """, (limit,))
+
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        return rows
+
+    def get_dashboard_stats(self):
+
+        conn = self.connect()
+
+        cursor = conn.cursor()
+
+        dashboard = {}
+
+    # Total Packets
+        cursor.execute("SELECT COUNT(*) FROM traffic_logs")
+        dashboard["total_packets"] = cursor.fetchone()[0]
+
+    # Total Attacks
+        cursor.execute("SELECT COUNT(*) FROM attack_logs")
+        dashboard["total_attacks"] = cursor.fetchone()[0]
+
+    # Connected Devices
+        cursor.execute("SELECT COUNT(*) FROM devices")
+        dashboard["connected_devices"] = cursor.fetchone()[0]
+
+    # High Severity
+        cursor.execute("""
+        SELECT COUNT(*)
+        FROM attack_logs
+        WHERE severity IN ('HIGH','CRITICAL')
+        """)
+        dashboard["high_severity"] = cursor.fetchone()[0]
+
+    # Average Threat Score
+        cursor.execute("""
+        SELECT AVG(threat_score)
+        FROM attack_logs
+        """)
+
+        score = cursor.fetchone()[0]
+
+        dashboard["threat_score"] = round(score or 0, 2)
+
+        conn.close()
+
+        return dashboard
+
+    def get_protocol_statistics(self):
+
+        conn = self.connect()
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        SELECT protocol,
+        COUNT(*)
+        FROM traffic_logs
+        GROUP BY protocol
+        """)
+
+        rows = cursor.fetchall()
+
+        conn.close()
+
+        protocol_stats = {}
+
+        for protocol, count in rows:
+
+            protocol_stats[protocol] = count
+
+        return protocol_stats
+    
+    def get_recent_traffic(self, limit=100):
+
+        conn = self.connect()
+
+        conn.row_factory = sqlite3.Row
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        SELECT *
+        FROM traffic_logs
+        ORDER BY id DESC
+        LIMIT ?
+        """, (limit,))
+
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        return rows
+
+    def get_recent_devices(self):
+
+        conn = self.connect()
+
+        conn.row_factory = sqlite3.Row
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+        SELECT *
+        FROM devices
+        ORDER BY last_seen DESC
+        """)
+
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        return rows
+
+    def get_blocked_ips(self):
+        conn = self.connect()
+        conn.row_factory = sqlite3.Row
+
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            SELECT *
+            FROM blocked_ips
+            ORDER BY id DESC
+        """)
+
+        rows = [dict(row) for row in cursor.fetchall()]
+
+        conn.close()
+
+        return rows
 
 # =========================
 # TEST DATABASE
 # =========================
+    def update_traffic_threat_score(self, record_id, threat_score):
+        conn = self.connect()
 
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE traffic_logs
+                SET threat_score = ?
+                WHERE id = ?
+                """,
+                (threat_score, record_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
 if __name__ == "__main__":
 
     db = IDSDatabase()

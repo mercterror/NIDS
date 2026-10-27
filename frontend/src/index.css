@@ -1,0 +1,182 @@
+
+:root {
+  font-family: Inter, "Segoe UI", Roboto, system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  color: #dce5ed;
+  background: #18232e;
+  color-scheme: dark;
+
+  --bg: #18232e;
+  --surface: #202f3d;
+  --surface-raised: #263747;
+  --surface-hover: #304555;
+  --border: #354653;
+
+  --text-primary: #e3edf4;
+  --text-secondary: #a5b5c3;
+  --text-muted: #8295a5;
+
+  --accent: #83c4d7;
+  --accent-hover: #a2d6e4;
+  --accent-subtle: rgba(131, 196, 215, 0.12);
+
+  --success: #8fc9a8;
+  --warning: #e2b86b;
+  --danger: #d98f93;
+  --info: #9bb9e5;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --sidebar-width: 252px;
+  --sidebar-collapsed-width: 76px;
+  --header-height: 76px;
+
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: Inter, "Segoe UI", Roboto, system-ui, sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-size: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+a {
+  color: var(--accent);
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+p {
+  color: var(--text-secondary);
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+::selection {
+  color: #18232e;
+  background: #83c4d7;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Light theme */
+
+:root[data-theme='light'] {
+  color: #293744;
+  background: #f3f6f9;
+  color-scheme: light;
+
+  --bg: #f3f6f9;
+  --surface: #ffffff;
+  --surface-raised: #f7f9fb;
+  --surface-hover: #edf2f6;
+  --border: #dce4eb;
+
+  --text-primary: #263746;
+  --text-secondary: #586b7b;
+  --text-muted: #7c8d9b;
+
+  --accent: #267f98;
+  --accent-hover: #1e6b80;
+  --accent-subtle: rgba(38, 127, 152, 0.1);
+
+  --success: #33865a;
+  --warning: #9a6a12;
+  --danger: #b74750;
+  --info: #426eae;
+
+  --shadow: 0 8px 24px rgba(30, 50, 70, 0.08);
+}
+
+:root[data-theme='light'] ::selection {
+  color: #ffffff;
+  background: #267f98;
+}
