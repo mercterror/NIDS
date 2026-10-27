@@ -1,0 +1,14 @@
+| Rule                             | Why it is Suspicious                                                                                                                                                |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Uses Telnet                      | Telnet sends credentials in plain text. Rarely used today.                                                                                                          |
+| Large Packet                     | Oversized packets may appear during attacks or abnormal transfers.                                                                                                  |
+| Uses FTP                         | FTP is unencrypted and considered outdated.                                                                                                                         |
+| ICMP Traffic                     | ICMP is normal for ping, but attackers also use it for scanning and reconnaissance.                                                                                 |
+| Large ICMP Packet                | Can indicate ICMP flood or oversized ping attacks.                                                                                                                  |
+| High Destination Port            | Very high ports can be associated with uncommon services or malware communication.                                                                                  |
+| High Source Port                 | Extremely high ephemeral ports may be worth monitoring.                                                                                                             |
+| Same Source and Destination Port | Unusual in many client-server communications.                                                                                                                       |
+| HTTP over UDP                    | HTTP normally uses TCP, so UDP on port 80 is suspicious.                                                                                                            |
+| HTTPS over UDP                   | Traditionally unusual (note that modern HTTP/3 uses QUIC over UDP, so in a production IDS this rule would need refinement).                                         |
+| DNS over TCP                     | DNS usually uses UDP, though TCP is legitimately used for some DNS operations such as large responses and zone transfers. Treat this as a low-confidence indicator. |
+| Very Small Packet                | Very small packets can appear during scans or reconnaissance.                                                                                                       |

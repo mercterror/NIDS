@@ -1,0 +1,46 @@
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Databases and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Test and tooling cache
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local backups
+*.backup
+*.bak
+
+# Temporary installers and local diagnostic scripts
+backend/get-pip.py
+backend/inspect_database.py
+backend/check_failed_connections.py

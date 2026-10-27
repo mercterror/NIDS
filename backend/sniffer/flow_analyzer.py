@@ -1,4 +1,5 @@
 from collections import defaultdict
+from pyexpat import features
 import time
 import math
 
@@ -95,28 +96,48 @@ class FlowAnalyzer:
 
         if duration <= 0:
             duration = 1
-
         packets_per_sec = flow["packet_count"] / duration
         bytes_per_sec = flow["byte_count"] / duration
+        average_packet_size = flow["byte_count"] / flow["packet_count"]
 
         avg_inter_arrival = 0
         if flow["inter_arrival_times"]:
             avg_inter_arrival = sum(flow["inter_arrival_times"]) / len(flow["inter_arrival_times"])
 
+        if flow["inter_arrival_times"]:
+            idle_time = max(flow["inter_arrival_times"])
+        else:
+            idle_time = 0
+
         entropy_score = self.calculate_entropy(list(flow["dst_ports"]))
+
+        syn_flag_count = flow["tcp_flags"].get("S", 0)
+        ack_flag_count = flow["tcp_flags"].get("A", 0)
+        fin_flag_count = flow["tcp_flags"].get("F", 0)
+        rst_flag_count = flow["tcp_flags"].get("R", 0)
+        psh_flag_count = flow["tcp_flags"].get("P", 0)
+        urg_flag_count = flow["tcp_flags"].get("U", 0)
+
 
         return {
             "flow_key": flow_key,
             "duration": round(duration, 2),
             "packet_count": flow["packet_count"],
             "byte_count": flow["byte_count"],
-            "packets_per_sec": round(packets_per_sec, 2),
-            "bytes_per_sec": round(bytes_per_sec, 2),
+            "packet_rate": round(packets_per_sec, 2),
+            "byte_rate": round(bytes_per_sec, 2),
+            "average_packet_size": round(average_packet_size, 2),
             "unique_src_ports": len(flow["src_ports"]),
             "unique_dst_ports": len(flow["dst_ports"]),
             "avg_inter_arrival": round(avg_inter_arrival, 6),
+            "idle_time": round(idle_time, 6),
             "entropy_score": entropy_score,
-            "tcp_flags": dict(flow["tcp_flags"])
+            "syn_flag_count": syn_flag_count,
+            "ack_flag_count": ack_flag_count,
+            "fin_flag_count": fin_flag_count,
+            "rst_flag_count": rst_flag_count,
+            "psh_flag_count": psh_flag_count,
+            "urg_flag_count": urg_flag_count
         }
 
     def expire_old_flows(self):
@@ -138,11 +159,16 @@ class FlowAnalyzer:
         print(f"Duration          : {features['duration']} sec")
         print(f"Packet Count      : {features['packet_count']}")
         print(f"Byte Count        : {features['byte_count']}")
-        print(f"Packets/sec       : {features['packets_per_sec']}")
-        print(f"Bytes/sec         : {features['bytes_per_sec']}")
+        print(f"Packets/sec       : {features['packet_rate']}")
+        print(f"Bytes/sec         : {features['byte_rate']}")
         print(f"Unique Src Ports  : {features['unique_src_ports']}")
         print(f"Unique Dst Ports  : {features['unique_dst_ports']}")
         print(f"Inter Arrival Avg : {features['avg_inter_arrival']}")
         print(f"Entropy Score     : {features['entropy_score']}")
-        print(f"TCP Flags         : {features['tcp_flags']}")
+        print(f"SYN Flags         : {features['syn_flag_count']}")
+        print(f"ACK Flags         : {features['ack_flag_count']}")
+        print(f"FIN Flags         : {features['fin_flag_count']}")
+        print(f"RST Flags         : {features['rst_flag_count']}")
+        print(f"PSH Flags         : {features['psh_flag_count']}")
+        print(f"URG Flags         : {features['urg_flag_count']}")
         print("=" * 60)
